@@ -8,8 +8,8 @@ html.fs-xlarge { --font-size: 22px; }
    Overrides design tokens so every Tailwind utility that
    consumes a CSS variable inherits the high-contrast palette. */
 html.high-contrast {
-  --background: #000000;
-  --foreground: #ffffff;
+  --background: #f0f4f8;
+  --foreground: #f0f4f8;
   --card: #0d0d0d;
   --card-foreground: #ffffff;
   --popover: #111111;
@@ -191,6 +191,8 @@ html.high-contrast button:focus-visible {
   }
 
   body {
+    background: linear-gradient(135deg, #f0f4f8 0%, #e8f0fe 100%);
+    min-height: 100vh;
     @apply bg-background text-foreground;
   }
 
