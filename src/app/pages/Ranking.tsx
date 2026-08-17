@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
+import { motion } from 'motion/react';
 import { useAuth, SEDES, Sede } from '../context/AuthContext';
 import { getStudents } from '../data/mockStudents';
 import { courses } from '../data/courses';
@@ -8,7 +9,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../co
 import { Badge } from '../components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
-import { Trophy, Medal, Star, Flame, Crown } from 'lucide-react';
+import { Trophy, Medal, Star } from 'lucide-react';
+import { RankBadge } from '../components/game/RankBadge';
+import { StreakFlame } from '../components/game/StreakFlame';
 
 interface RankedStudent {
   id: string;
@@ -65,9 +68,9 @@ function buildRanking(): RankedStudent[] {
 }
 
 function RankPosition({ pos }: { pos: number }) {
-  if (pos === 1) return <Crown className="size-5 text-yellow-500" />;
-  if (pos === 2) return <Medal className="size-5 text-gray-400" />;
-  if (pos === 3) return <Medal className="size-5 text-amber-600" />;
+  if (pos === 1) return <Trophy className="size-5 text-amber-500" />;
+  if (pos === 2) return <Medal className="size-5 text-slate-400" />;
+  if (pos === 3) return <Medal className="size-5 text-amber-700" />;
   return <span className="text-sm font-bold text-gray-500 w-5 text-center">{pos}</span>;
 }
 
@@ -96,45 +99,59 @@ export function Ranking() {
   const myRank = globalRanking.findIndex(s => s.name.toLowerCase().includes(user.name.toLowerCase())) + 1;
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
-      {/* Header */}
-      <div className="text-center mb-8">
-        <div className="flex items-center justify-center gap-3 mb-3">
-          <Trophy className="size-10 text-yellow-500" />
-          <h1 className="text-3xl font-bold">Ranking de la Plataforma</h1>
-        </div>
-        <p className="text-gray-600">Los colaboradores más activos de ONG Alumco</p>
-      </div>
-
-      {/* Top 3 podium */}
-      <div className="grid grid-cols-3 gap-4 mb-8">
-        {[1, 0, 2].map((rankIdx, colIdx) => {
-          const student = globalRanking[rankIdx];
-          if (!student) return <div key={colIdx} />;
-          const level = getLevelForPoints(student.points);
-          const heights = ['h-24', 'h-32', 'h-20'];
-          const ringColors = ['ring-gray-300', 'ring-yellow-400', 'ring-amber-500'];
-
-          return (
-            <div
-              key={colIdx}
-              className={`flex flex-col items-center gap-2 ${colIdx === 1 ? 'order-2' : colIdx === 0 ? 'order-1' : 'order-3'}`}
-            >
-              <div className={`size-14 rounded-full ${level.bgColor} flex items-center justify-center text-xl ring-4 ${ringColors[colIdx]}`}>
-                {level.emoji}
-              </div>
-              <p className="font-semibold text-sm text-center leading-tight">{student.name.split(' ')[0]}</p>
-              <p className="text-xs text-gray-500">{student.points} pts</p>
-              <div className={`w-full ${heights[colIdx]} rounded-t-lg flex items-center justify-center font-bold text-white ${
-                colIdx === 1 ? 'bg-yellow-400 text-yellow-900' : colIdx === 0 ? 'bg-gray-300 text-gray-700' : 'bg-amber-500 text-amber-900'
-              }`}>
-                {colIdx === 1 ? '🥇 1°' : colIdx === 0 ? '🥈 2°' : '🥉 3°'}
-              </div>
+    <div>
+      {/* ── Arcade leaderboard hero ────────────────────────── */}
+      <div data-game-panel data-game-grid className="py-10 px-4">
+        <div className="container mx-auto max-w-4xl">
+          <div className="text-center mb-8">
+            <div className="flex items-center justify-center gap-3 mb-3">
+              <Trophy className="size-9 text-neon-gold text-glow-gold" />
+              <h1 className="font-display text-3xl font-bold uppercase tracking-wide text-game-ink">
+                Ranking de la Plataforma
+              </h1>
             </div>
-          );
-        })}
+            <p className="text-game-ink-muted">Los colaboradores más activos de ONG Alumco compiten por el primer lugar</p>
+          </div>
+
+          {/* Top 3 podium */}
+          <div className="grid grid-cols-3 gap-4 items-end max-w-2xl mx-auto">
+            {[1, 0, 2].map((rankIdx, colIdx) => {
+              const student = globalRanking[rankIdx];
+              if (!student) return <div key={colIdx} />;
+              const level = getLevelForPoints(student.points);
+              const heights = ['h-20', 'h-28', 'h-16'];
+              const podiumStyle = [
+                { glow: 'glow-cyan', bar: 'bg-game-surface-2 border-t-2 border-neon-cyan', text: 'text-neon-cyan' },
+                { glow: 'glow-gold', bar: 'bg-game-surface-2 border-t-2 border-neon-gold', text: 'text-neon-gold' },
+                { glow: 'glow-amber', bar: 'bg-game-surface-2 border-t-2 border-neon-amber', text: 'text-neon-amber' },
+              ][colIdx];
+
+              return (
+                <motion.div
+                  key={colIdx}
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: colIdx * 0.1, ease: [0.16, 1, 0.3, 1] }}
+                  className={`flex flex-col items-center gap-2 ${colIdx === 1 ? 'order-2' : colIdx === 0 ? 'order-1' : 'order-3'}`}
+                >
+                  <div className={`rounded-full bg-game-surface-2 p-1 ${podiumStyle.glow}`}>
+                    <RankBadge level={level} size={colIdx === 1 ? 'lg' : 'md'} />
+                  </div>
+                  <p className="font-display font-semibold text-sm text-center leading-tight text-game-ink">
+                    {student.name.split(' ')[0]}
+                  </p>
+                  <p className={`text-xs font-bold ${podiumStyle.text}`}>{student.points} pts</p>
+                  <div className={`w-full ${heights[colIdx]} rounded-t-lg flex items-start justify-center pt-2 font-display font-bold ${podiumStyle.bar} ${podiumStyle.text}`}>
+                    {colIdx === 1 ? '1°' : colIdx === 0 ? '2°' : '3°'}
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
       <Tabs defaultValue="global">
         <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
           <TabsList>
@@ -161,16 +178,14 @@ export function Ranking() {
                     <div
                       key={student.id}
                       className={`flex items-center gap-3 p-3 rounded-xl transition-colors ${
-                        isMe ? 'bg-blue-50 border-2 border-blue-200' : 'hover:bg-gray-50 border border-transparent'
+                        isMe ? 'bg-primary/5 border-2 border-primary/30' : 'hover:bg-gray-50 border border-transparent'
                       }`}
                     >
                       <div className="w-7 flex justify-center shrink-0">
                         <RankPosition pos={pos} />
                       </div>
 
-                      <div className={`size-9 rounded-full ${level.bgColor} flex items-center justify-center text-lg shrink-0`}>
-                        {level.emoji}
-                      </div>
+                      <RankBadge level={level} size="sm" />
 
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
@@ -179,23 +194,21 @@ export function Ranking() {
                         </div>
                         <div className="flex items-center gap-3 text-xs text-gray-500">
                           <span>{student.sede}</span>
-                          <span className={`font-medium ${level.textColor}`}>{level.name}</span>
+                          <span className="font-medium text-primary">{level.name}</span>
                         </div>
                       </div>
 
                       <div className="flex items-center gap-4 text-sm shrink-0">
                         <div className="text-center hidden sm:block">
-                          <div className="font-bold text-green-600">{student.completedCourses}</div>
+                          <div className="font-bold text-primary">{student.completedCourses}</div>
                           <div className="text-xs text-gray-400">cursos</div>
                         </div>
                         <div className="text-center hidden sm:block">
-                          <div className="flex items-center gap-1 font-bold text-orange-500">
-                            <Flame className="size-3.5" />{student.streak}
-                          </div>
+                          <StreakFlame streak={student.streak} size="sm" tone="light" />
                           <div className="text-xs text-gray-400">racha</div>
                         </div>
                         <div className="text-center">
-                          <div className="font-bold text-blue-700">{student.points}</div>
+                          <div className="font-bold text-fuchsia-700">{student.points}</div>
                           <div className="text-xs text-gray-400">pts</div>
                         </div>
                       </div>
@@ -246,10 +259,11 @@ export function Ranking() {
                         <p className="font-semibold text-sm mb-1">{sede}</p>
                         <p className="text-xs text-gray-500">{sedeStudents.length} colaboradores</p>
                         <p className="text-xs text-gray-500">Promedio: {avgPts} pts</p>
-                        <div className="mt-2">
+                        <div className="mt-2 space-y-1">
                           {sedeStudents.slice(0, 3).map(s => (
-                            <span key={s.id} className="text-xs text-gray-600 block truncate">
-                              {getLevelForPoints(s.points).emoji} {s.name.split(' ')[0]}
+                            <span key={s.id} className="flex items-center gap-1.5 text-xs text-gray-600 truncate">
+                              <RankBadge level={getLevelForPoints(s.points)} size="xs" />
+                              {s.name.split(' ')[0]}
                             </span>
                           ))}
                         </div>
@@ -268,18 +282,16 @@ export function Ranking() {
                       <div className="w-7 flex justify-center shrink-0">
                         <RankPosition pos={pos} />
                       </div>
-                      <div className={`size-9 rounded-full ${level.bgColor} flex items-center justify-center text-lg shrink-0`}>
-                        {level.emoji}
-                      </div>
+                      <RankBadge level={level} size="sm" />
                       <div className="flex-1 min-w-0">
                         <p className="font-medium truncate">{student.name}</p>
                         <p className="text-xs text-gray-500">{student.sede} · {level.name}</p>
                       </div>
                       <div className="flex items-center gap-3 text-sm shrink-0">
-                        <span className="hidden sm:flex items-center gap-1 text-orange-500">
-                          <Flame className="size-3.5" />{student.streak}
+                        <span className="hidden sm:flex">
+                          <StreakFlame streak={student.streak} size="sm" tone="light" />
                         </span>
-                        <span className="font-bold text-blue-700">{student.points} pts</span>
+                        <span className="font-bold text-fuchsia-700">{student.points} pts</span>
                       </div>
                     </div>
                   );
@@ -315,6 +327,7 @@ export function Ranking() {
           </div>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }

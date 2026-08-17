@@ -1,10 +1,19 @@
+import { Shield, Zap, Flame, Crown, Sparkles, type LucideIcon } from 'lucide-react';
+
+/** One of the five neon accent colors defined in theme.css / game.css. */
+export type NeonKey = 'lime' | 'cyan' | 'violet' | 'magenta' | 'gold';
+export type Rarity = 'common' | 'rare' | 'epic' | 'legendary';
+
 export interface LevelDef {
+  /** Rank name shown in the UI — "Recluta", "Operador", etc. */
   name: string;
-  emoji: string;
+  /** Short line used in level-up moments / tooltips. */
+  tagline: string;
+  icon: LucideIcon;
   minPoints: number;
-  color: string;
-  bgColor: string;
-  textColor: string;
+  neon: NeonKey;
+  /** True only for the top rank — unlocks the animated prismatic ring. */
+  prismatic?: boolean;
 }
 
 export interface BadgeDef {
@@ -12,42 +21,50 @@ export interface BadgeDef {
   name: string;
   description: string;
   emoji: string;
-  bgColor: string;
-  textColor: string;
+  rarity: Rarity;
 }
 
+/**
+ * Rank ladder. Five tiers instead of the original four — "Mítico" is an
+ * aspirational top rank that keeps the most engaged collaborators chasing
+ * something even after "Leyenda", without touching how points are earned.
+ */
 export const LEVELS: LevelDef[] = [
   {
-    name: 'Aprendiz',
-    emoji: '🌱',
+    name: 'Recluta',
+    tagline: 'Acabas de entrar al juego. ¡A sumar tus primeros puntos!',
+    icon: Shield,
     minPoints: 0,
-    color: 'border-green-300',
-    bgColor: 'bg-green-50',
-    textColor: 'text-green-700',
+    neon: 'lime',
   },
   {
-    name: 'Colaborador',
-    emoji: '⭐',
+    name: 'Operador',
+    tagline: 'Ya tienes el ritmo. Sigue completando módulos.',
+    icon: Zap,
     minPoints: 150,
-    color: 'border-blue-300',
-    bgColor: 'bg-blue-50',
-    textColor: 'text-blue-700',
+    neon: 'cyan',
   },
   {
-    name: 'Experto',
-    emoji: '🔥',
+    name: 'Elite',
+    tagline: 'Pocos llegan hasta aquí. Tu constancia se nota.',
+    icon: Flame,
     minPoints: 400,
-    color: 'border-orange-300',
-    bgColor: 'bg-orange-50',
-    textColor: 'text-orange-700',
+    neon: 'violet',
   },
   {
-    name: 'Maestro',
-    emoji: '👑',
+    name: 'Leyenda',
+    tagline: 'Referente de tu sede. Un rango que se gana.',
+    icon: Crown,
     minPoints: 750,
-    color: 'border-purple-300',
-    bgColor: 'bg-purple-50',
-    textColor: 'text-purple-700',
+    neon: 'magenta',
+  },
+  {
+    name: 'Mítico',
+    tagline: 'El rango más alto de la plataforma. Estás en la cima.',
+    icon: Sparkles,
+    minPoints: 1500,
+    neon: 'gold',
+    prismatic: true,
   },
 ];
 
@@ -57,56 +74,49 @@ export const BADGES: BadgeDef[] = [
     name: 'Primera Capacitación',
     description: 'Completaste tu primer curso exitosamente',
     emoji: '🎓',
-    bgColor: 'bg-blue-50',
-    textColor: 'text-blue-700',
+    rarity: 'common',
   },
   {
-    id: 'champion',
-    name: 'Campeón de Sede',
-    description: 'Completaste todos los cursos disponibles',
-    emoji: '🏆',
-    bgColor: 'bg-yellow-50',
-    textColor: 'text-yellow-700',
-  },
-  {
-    id: 'perfect_score',
-    name: 'Puntaje Perfecto',
-    description: 'Obtuviste 100% en un examen',
-    emoji: '💯',
-    bgColor: 'bg-emerald-50',
-    textColor: 'text-emerald-700',
+    id: 'streak_3',
+    name: 'Racha de 3 Días',
+    description: '3 días consecutivos activo en la plataforma',
+    emoji: '�',
+    rarity: 'common',
   },
   {
     id: 'no_errors',
     name: 'Sin Errores',
     description: 'Aprobaste un examen con 100% en tu primer intento',
     emoji: '✨',
-    bgColor: 'bg-cyan-50',
-    textColor: 'text-cyan-700',
-  },
-  {
-    id: 'streak_3',
-    name: 'Racha de 3 Días',
-    description: '3 días consecutivos activo en la plataforma',
-    emoji: '🔥',
-    bgColor: 'bg-orange-50',
-    textColor: 'text-orange-700',
+    rarity: 'rare',
   },
   {
     id: 'streak_7',
     name: 'Dedicado',
     description: '7 días consecutivos activo en la plataforma',
     emoji: '⚡',
-    bgColor: 'bg-purple-50',
-    textColor: 'text-purple-700',
+    rarity: 'rare',
+  },
+  {
+    id: 'perfect_score',
+    name: 'Puntaje Perfecto',
+    description: 'Obtuviste 100% en un examen',
+    emoji: '💯',
+    rarity: 'epic',
   },
   {
     id: 'weekly_streak',
     name: 'Constante',
     description: 'Completaste módulos durante 3 semanas seguidas',
     emoji: '🚀',
-    bgColor: 'bg-rose-50',
-    textColor: 'text-rose-700',
+    rarity: 'epic',
+  },
+  {
+    id: 'champion',
+    name: 'Campeón de Sede',
+    description: 'Completaste todos los cursos disponibles',
+    emoji: '🏆',
+    rarity: 'legendary',
   },
 ];
 

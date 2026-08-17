@@ -5,11 +5,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 import { Button } from '../components/ui/button';
 import { Progress } from '../components/ui/progress';
 import { Badge } from '../components/ui/badge';
-import { BookOpen, Award, TrendingUp, ArrowRight, Flame, Trophy, Star } from 'lucide-react';
+import { BookOpen, Award, TrendingUp, ArrowRight, Trophy, Star } from 'lucide-react';
 import { courses } from '../data/courses';
 import {
-  getLevelForPoints, getNextLevel, getLevelProgress, getBadgeById, BADGES,
+  getLevelForPoints, getNextLevel, getLevelProgress, BADGES,
 } from '../data/gamification';
+import { RankBadge } from '../components/game/RankBadge';
+import { XPBar } from '../components/game/XPBar';
+import { StreakFlame } from '../components/game/StreakFlame';
+import { BadgeTile } from '../components/game/BadgeTile';
+import { NEON_STYLES } from '../components/game/gameStyles';
 
 export function Dashboard() {
   const { user, isAuthenticated, recordDailyActivity } = useAuth();
@@ -35,76 +40,57 @@ export function Dashboard() {
   const nextLevel = getNextLevel(user.points);
   const levelProgress = getLevelProgress(user.points);
   const earnedBadges = BADGES.filter(b => user.badges.includes(b.id));
-  const lockedBadges = BADGES.filter(b => !user.badges.includes(b.id));
+  const levelStyles = NEON_STYLES[level.neon];
 
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Welcome */}
-      <div className="mb-8 flex items-start justify-between flex-wrap gap-4">
-        <div>
-          <h1 className="text-3xl font-bold mb-1">¡Bienvenido, {user.name}!</h1>
-          <p className="text-gray-600">Continúa tu camino de aprendizaje · Sede: {user.sede}</p>
-        </div>
-        {/* Streak banner */}
-        {user.streak > 1 && (
-          <div className="flex items-center gap-2 bg-orange-50 border border-orange-200 rounded-xl px-4 py-2">
-            <Flame className="size-5 text-orange-500" />
-            <span className="font-bold text-orange-700">{user.streak} días de racha</span>
-          </div>
-        )}
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold mb-1">¡Bienvenido, {user.name}!</h1>
+        <p className="text-gray-600">Continúa tu camino de aprendizaje · Sede: {user.sede}</p>
       </div>
 
-      {/* ── Gamification Level Card ───────────────────────── */}
-      <Card className={`mb-6 border-2 ${level.color}`}>
-        <CardContent className="pt-5 pb-5">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-            {/* Level badge */}
-            <div className={`flex items-center gap-3 px-4 py-2 rounded-xl ${level.bgColor}`}>
-              <span className="text-3xl">{level.emoji}</span>
+      {/* ── Gamification HUD ─────────────────────────────────── */}
+      <div data-game-panel data-game-grid className="mb-8 rounded-2xl p-5 sm:p-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
+          <RankBadge level={level} size="lg" />
+
+          <div className="flex-1 min-w-0 w-full">
+            <div className="flex flex-wrap items-baseline justify-between gap-2 mb-2">
               <div>
-                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Nivel</p>
-                <p className={`text-xl font-bold ${level.textColor}`}>{level.name}</p>
-              </div>
-            </div>
-
-            {/* Points + progress */}
-            <div className="flex-1 min-w-0">
-              <div className="flex justify-between text-sm mb-1">
-                <span className="font-semibold text-gray-700">{user.points} puntos</span>
-                {nextLevel ? (
-                  <span className="text-gray-500">
-                    {nextLevel.emoji} {nextLevel.name} en {nextLevel.minPoints - user.points} pts
-                  </span>
-                ) : (
-                  <span className={`font-semibold ${level.textColor}`}>¡Nivel máximo!</span>
-                )}
-              </div>
-              <Progress value={levelProgress} className="h-3" />
-              {nextLevel && (
-                <p className="text-xs text-gray-400 mt-1">
-                  {levelProgress}% hacia {nextLevel.name}
+                <p className="text-[11px] font-display uppercase tracking-[0.25em] text-game-ink-muted">Rango actual</p>
+                <p className={`font-display text-2xl font-bold uppercase tracking-wide ${levelStyles.textGlow}`}>
+                  {level.name}
                 </p>
-              )}
+              </div>
+              <div className="text-right">
+                <p className="font-display text-2xl font-bold text-game-ink">{user.points}</p>
+                <p className="text-[11px] text-game-ink-muted uppercase tracking-wide">puntos</p>
+              </div>
             </div>
 
-            {/* Streak */}
-            <div className="text-center shrink-0">
-              <div className="flex items-center gap-1 text-orange-600 font-bold text-2xl">
-                <Flame className="size-6" />
-                {user.streak}
-              </div>
-              <p className="text-xs text-gray-500">días seguidos</p>
-            </div>
+            <XPBar value={levelProgress} neon={level.neon} />
+
+            <p className="text-xs text-game-ink-muted mt-1.5">
+              {nextLevel
+                ? <>{levelProgress}% hacia <span className={NEON_STYLES[nextLevel.neon].text}>{nextLevel.name}</span> · faltan {nextLevel.minPoints - user.points} pts</>
+                : '¡Rango máximo alcanzado! Eres una leyenda de la plataforma.'}
+            </p>
           </div>
-        </CardContent>
-      </Card>
+
+          <div className="shrink-0 flex sm:flex-col items-center gap-2 border-t sm:border-t-0 sm:border-l border-game-border pt-4 sm:pt-0 sm:pl-6 w-full sm:w-auto justify-center">
+            <StreakFlame streak={user.streak} size="lg" />
+            <p className="text-[11px] text-game-ink-muted uppercase tracking-wide">días de racha</p>
+          </div>
+        </div>
+      </div>
 
       {/* ── Stats Grid ────────────────────────────────────── */}
       <div className="grid md:grid-cols-3 gap-6 mb-8">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm">Cursos Completados</CardTitle>
-            <BookOpen className="size-4 text-blue-600" />
+            <BookOpen className="size-4 text-primary" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{completedCount}</div>
@@ -115,7 +101,7 @@ export function Dashboard() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm">Certificados Obtenidos</CardTitle>
-            <Award className="size-4 text-green-600" />
+            <Award className="size-4 text-amber-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{user.certificates.length}</div>
@@ -126,7 +112,7 @@ export function Dashboard() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm">Progreso General</CardTitle>
-            <TrendingUp className="size-4 text-purple-600" />
+            <TrendingUp className="size-4 text-violet-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{Math.round(progressPercentage)}%</div>
@@ -136,63 +122,30 @@ export function Dashboard() {
       </div>
 
       {/* ── Badges / Insignias ───────────────────────────── */}
-      <Card className="mb-8">
-        <CardHeader className="flex flex-row items-center justify-between">
+      <div data-game-panel className="mb-8 rounded-2xl p-5 sm:p-6">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
           <div>
-            <CardTitle className="flex items-center gap-2">
-              <Star className="size-5 text-yellow-500" />
+            <h3 className="flex items-center gap-2 font-display text-lg font-bold text-game-ink">
+              <Star className="size-5 text-neon-gold" />
               Mis Insignias
-            </CardTitle>
-            <CardDescription>
+            </h3>
+            <p className="text-sm text-game-ink-muted">
               {earnedBadges.length} de {BADGES.length} insignias obtenidas
-            </CardDescription>
+            </p>
           </div>
           <Link to="/ranking">
-            <Button variant="outline" size="sm" className="gap-1">
+            <Button variant="outline" size="sm" className="gap-1 bg-transparent border-game-border text-game-ink hover:bg-game-surface-2 hover:text-game-ink">
               <Trophy className="size-4" /> Ver Ranking
             </Button>
           </Link>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {BADGES.map(badge => {
-              const earned = user.badges.includes(badge.id);
-              return (
-                <div
-                  key={badge.id}
-                  title={badge.description}
-                  className={`relative flex flex-col items-center gap-2 p-3 rounded-xl border-2 text-center transition-all ${
-                    earned
-                      ? `${badge.bgColor} border-current ${badge.textColor} shadow-sm`
-                      : 'bg-gray-50 border-gray-200 opacity-40 grayscale'
-                  }`}
-                >
-                  <span className="text-3xl">{badge.emoji}</span>
-                  <span className={`text-xs font-semibold leading-tight ${earned ? badge.textColor : 'text-gray-400'}`}>
-                    {badge.name}
-                  </span>
-                  {!earned && (
-                    <span className="absolute top-1 right-1 text-xs">🔒</span>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+        </div>
 
-          {earnedBadges.length > 0 && (
-            <div className="mt-4 pt-4 border-t">
-              <h4 className="text-sm font-medium text-gray-700 mb-2">Últimas insignias obtenidas:</h4>
-              <div className="flex flex-wrap gap-2">
-                {earnedBadges.slice(-3).map(b => (
-                  <Badge key={b.id} className={`${b.bgColor} ${b.textColor} border-0`}>
-                    {b.emoji} {b.name}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {BADGES.map((badge, i) => (
+            <BadgeTile key={badge.id} badge={badge} earned={user.badges.includes(badge.id)} index={i} />
+          ))}
+        </div>
+      </div>
 
       {/* ── Certificates ─────────────────────────────────── */}
       {user.certificates.length > 0 && (
@@ -246,14 +199,14 @@ export function Dashboard() {
           <div className="grid md:grid-cols-3 gap-6">
             {inProgressCourses.map(course => (
               <div key={course.id} className="border rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
-                <div className="aspect-video bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                <div className="aspect-video bg-gradient-to-br from-primary to-neon-violet flex items-center justify-center">
                   <BookOpen className="size-12 text-white" />
                 </div>
                 <div className="p-4">
                   <Badge className="mb-2">{course.level}</Badge>
                   <h4 className="font-semibold mb-2">{course.title}</h4>
                   <p className="text-sm text-gray-600 mb-3 line-clamp-2">{course.description}</p>
-                  <p className="text-xs text-gray-400 mb-3">
+                  <p className="text-xs font-semibold text-amber-700 mb-3">
                     +{15 * course.modules.length} pts por módulos · +{
                       course.exam.passingScore >= 90 ? 100 : course.exam.passingScore >= 80 ? 75 : 50
                     } pts por examen

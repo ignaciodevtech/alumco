@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react';
 import { Outlet, Link, useNavigate } from 'react-router';
 import { useAuth } from '../context/AuthContext';
 import { useAccessibility, FontSize } from '../context/AccessibilityContext';
@@ -13,6 +14,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from './ui/dropdown-menu';
+import { getLevelForPoints, type LevelDef } from '../data/gamification';
+import { RankBadge } from './game/RankBadge';
+import { LevelUpCelebration } from './game/LevelUpCelebration';
 
 const FONT_SIZES: { value: FontSize; label: string }[] = [
   { value: 'normal', label: 'A' },
@@ -24,6 +28,25 @@ export function Layout() {
   const { user, isAuthenticated, logout } = useAuth();
   const { highContrast, fontSize, toggleHighContrast, setFontSize } = useAccessibility();
   const navigate = useNavigate();
+
+  // ── Global level-up detection ─────────────────────────────────
+  // Watches the authenticated user's points regardless of which page
+  // awarded them (module complete, exam pass, …) and fires the
+  // celebration overlay the moment the rank actually changes.
+  const prevLevelName = useRef<string | null>(null);
+  const [levelUp, setLevelUp] = useState<LevelDef | null>(null);
+
+  useEffect(() => {
+    if (!user) {
+      prevLevelName.current = null;
+      return;
+    }
+    const current = getLevelForPoints(user.points);
+    if (prevLevelName.current && prevLevelName.current !== current.name) {
+      setLevelUp(current);
+    }
+    prevLevelName.current = current.name;
+  }, [user?.points]);
 
   const handleLogout = () => {
     logout();
@@ -79,11 +102,11 @@ export function Layout() {
       </div>
 
       {/* ── Main Header ───────────────────────────────────────── */}
-      <header className="border-b bg-white sticky top-0 z-50">
+      <header className="border-b bg-white/90 backdrop-blur sticky top-0 z-[var(--z-sticky)]">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
-            <GraduationCap className="size-8 text-blue-600" />
-            <span className="font-bold text-xl">CapacitaciónPro</span>
+            <GraduationCap className="size-8 text-primary" />
+            <span className="font-display font-bold text-xl tracking-wide">CapacitaciónPro</span>
           </Link>
 
           <nav className="hidden md:flex items-center gap-6">
@@ -91,35 +114,44 @@ export function Layout() {
               <>
                 <Link
                   to={user?.role === 'teacher' ? '/teacher' : user?.role === 'admin' ? '/admin' : '/dashboard'}
-                  className="flex items-center gap-2 hover:text-blue-600 transition-colors"
+                  className="flex items-center gap-2 hover:text-primary transition-colors"
                 >
                   <LayoutDashboard className="size-4" />
                   Dashboard
                 </Link>
-                <Link to="/courses" className="flex items-center gap-2 hover:text-blue-600 transition-colors">
+                <Link to="/courses" className="flex items-center gap-2 hover:text-primary transition-colors">
                   <BookOpen className="size-4" />
                   Cursos
                 </Link>
                 {user?.role === 'user' && (
-                  <Link to="/ranking" className="flex items-center gap-2 hover:text-blue-600 transition-colors">
+                  <Link to="/ranking" className="flex items-center gap-2 hover:text-primary transition-colors">
                     <Trophy className="size-4" />
                     Ranking
                   </Link>
                 )}
-                <Link to="/profile" className="flex items-center gap-2 hover:text-blue-600 transition-colors">
+                <Link to="/profile" className="flex items-center gap-2 hover:text-primary transition-colors">
                   <User className="size-4" />
                   Mi Perfil
                 </Link>
               </>
             ) : (
-              <Link to="/" className="flex items-center gap-2 hover:text-blue-600 transition-colors">
+              <Link to="/" className="flex items-center gap-2 hover:text-primary transition-colors">
                 <Home className="size-4" />
                 Inicio
               </Link>
             )}
           </nav>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            {isAuthenticated && user?.role === 'user' && (
+              <Link
+                to="/dashboard"
+                title={`Rango: ${getLevelForPoints(user.points).name}`}
+                className="hidden sm:flex items-center gap-2 rounded-full border border-game-border bg-game-bg px-3 py-1.5"
+              >
+                <RankBadge level={getLevelForPoints(user.points)} size="sm" showLabel />
+              </Link>
+            )}
             {isAuthenticated ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -175,6 +207,8 @@ export function Layout() {
       <main className="flex-1">
         <Outlet />
       </main>
+
+      <LevelUpCelebration level={levelUp} onClose={() => setLevelUp(null)} />
 
       <footer className="border-t bg-gray-50 py-8 mt-12">
         <div className="container mx-auto px-4 text-center text-gray-600">

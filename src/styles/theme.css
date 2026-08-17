@@ -66,45 +66,123 @@ html.high-contrast button:focus-visible {
   outline: 3px solid #ffff00 !important;
 }
 
+/* Game/gamification surfaces: fold the neon layer back into the
+   established high-contrast palette instead of turning it off, so rank,
+   XP and badge state are still legible and distinguishable. */
+html.high-contrast [data-game-panel] {
+  background: #0d0d0d !important;
+  border-color: rgba(255, 255, 255, 0.4) !important;
+  box-shadow: none !important;
+}
+html.high-contrast [data-game-panel] * {
+  text-shadow: none !important;
+}
+html.high-contrast .text-neon-lime,
+html.high-contrast .text-neon-cyan,
+html.high-contrast .text-neon-gold,
+html.high-contrast .text-neon-amber {
+  color: #ffff00 !important;
+}
+html.high-contrast .text-neon-violet,
+html.high-contrast .text-neon-magenta {
+  color: #66b3ff !important;
+}
+html.high-contrast .border-neon-lime,
+html.high-contrast .border-neon-cyan,
+html.high-contrast .border-neon-violet,
+html.high-contrast .border-neon-magenta,
+html.high-contrast .border-neon-gold,
+html.high-contrast .border-neon-amber {
+  border-color: #ffff00 !important;
+}
+html.high-contrast [data-glow],
+html.high-contrast .animate-pulse-glow,
+html.high-contrast .shimmer-sweep::after,
+html.high-contrast .animate-flame-flicker {
+  animation: none !important;
+  filter: none !important;
+}
+
 :root {
   --font-size: 16px;
-  --background: #ffffff;
-  --foreground: oklch(0.145 0 0);
-  --card: #ffffff;
-  --card-foreground: oklch(0.145 0 0);
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.17 0.014 250);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.17 0.014 250);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: #030213;
+  --popover-foreground: oklch(0.17 0.014 250);
+  /* Brand primary: a considered, confident teal — not generic SaaS navy. */
+  --primary: oklch(0.5 0.1 180);
   --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.95 0.0058 264.53);
-  --secondary-foreground: #030213;
-  --muted: #ececf0;
-  --muted-foreground: #717182;
-  --accent: #e9ebef;
-  --accent-foreground: #030213;
-  --destructive: #d4183d;
+  --secondary: oklch(0.96 0.006 210);
+  --secondary-foreground: oklch(0.22 0.02 210);
+  --muted: oklch(0.96 0.006 210);
+  --muted-foreground: oklch(0.48 0.014 240);
+  /* Neutral hover/highlight surface — kept quiet on purpose. shadcn wires
+     this into every ghost/outline hover state across the whole app, so it
+     stays a calm neutral; the amber "brand energy" color lives only in
+     --neon-amber and is applied explicitly on gamification surfaces. */
+  --accent: oklch(0.95 0.008 210);
+  --accent-foreground: oklch(0.22 0.02 210);
+  --destructive: oklch(0.58 0.22 25);
   --destructive-foreground: #ffffff;
-  --border: rgba(0, 0, 0, 0.1);
+  --border: oklch(0.17 0.014 250 / 10%);
   --input: transparent;
-  --input-background: #f3f3f5;
-  --switch-background: #cbced4;
+  --input-background: oklch(0.97 0.005 210);
+  --switch-background: oklch(0.82 0.01 240);
   --font-weight-medium: 500;
   --font-weight-normal: 400;
-  --ring: oklch(0.708 0 0);
+  --ring: oklch(0.5 0.1 180 / 50%);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
-  --radius: 0.625rem;
+  --radius: 0.75rem;
   --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: #030213;
+  --sidebar-foreground: oklch(0.17 0.014 250);
+  --sidebar-primary: oklch(0.5 0.1 180);
   --sidebar-primary-foreground: oklch(0.985 0 0);
   --sidebar-accent: oklch(0.97 0 0);
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+
+  /* ── Game layer: dark "arcade console" surfaces ──────────────
+     Used only by gamification widgets (level HUD, badges, ranking,
+     landing hero) — the rest of the app stays on the light, serious
+     base tokens above. Same hue family as --primary so the "powered up"
+     colors read as an intensified version of the brand, not a clash. */
+  --game-bg: oklch(0.17 0.035 275);
+  --game-surface: oklch(0.23 0.04 275);
+  --game-surface-2: oklch(0.29 0.045 275);
+  --game-border: oklch(0.5 0.06 275 / 35%);
+  --game-ink: oklch(0.96 0.01 275);
+  --game-ink-muted: oklch(0.74 0.03 275);
+
+  /* Neon accents — one per rank tier, high chroma, used sparingly for
+     glow, borders and small text, never as full-page fills. */
+  --neon-lime: oklch(0.86 0.22 128);
+  --neon-cyan: oklch(0.83 0.15 200);
+  --neon-violet: oklch(0.66 0.24 300);
+  --neon-magenta: oklch(0.68 0.26 350);
+  --neon-gold: oklch(0.82 0.16 85);
+  --neon-amber: oklch(0.78 0.16 60);
+
+  --font-display-family: 'Rajdhani', 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-body-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+
+  /* ── Semantic z-index scale ───────────────────────────────────
+     Radix primitives (dialog/dropdown/popover/tooltip) already ship
+     with their own z-50 convention, which stays untouched. These
+     tokens exist for the app-level layers introduced alongside the
+     gamification layer, kept in one place instead of ad-hoc numbers. */
+  --z-dropdown: 30;
+  --z-sticky: 40;
+  --z-modal-backdrop: 50;
+  --z-modal: 51;
+  --z-toast: 60;
+  --z-tooltip: 70;
 }
 
 .dark {
@@ -183,6 +261,23 @@ html.high-contrast button:focus-visible {
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Game layer + neon accents → generates bg-game-*, text-neon-*, etc. */
+  --color-game-bg: var(--game-bg);
+  --color-game-surface: var(--game-surface);
+  --color-game-surface-2: var(--game-surface-2);
+  --color-game-border: var(--game-border);
+  --color-game-ink: var(--game-ink);
+  --color-game-ink-muted: var(--game-ink-muted);
+  --color-neon-lime: var(--neon-lime);
+  --color-neon-cyan: var(--neon-cyan);
+  --color-neon-violet: var(--neon-violet);
+  --color-neon-magenta: var(--neon-magenta);
+  --color-neon-gold: var(--neon-gold);
+  --color-neon-amber: var(--neon-amber);
+
+  --font-display: var(--font-display-family);
+  --font-sans: var(--font-body-family);
 }
 
 @layer base {
@@ -191,18 +286,25 @@ html.high-contrast button:focus-visible {
   }
 
   body {
-    background: linear-gradient(135deg, #f0f4f8 0%, #e8f0fe 100%);
     min-height: 100vh;
+    font-family: var(--font-body-family);
     @apply bg-background text-foreground;
   }
 
   /**
   * Default typography styles for HTML elements (h1-h4, p, label, button, input).
   * These are in @layer base, so Tailwind utility classes (like text-sm, text-lg) automatically override them.
+  * Headings use the display/HUD font so every page — including admin and
+  * teacher screens — picks up the branded, slightly technical personality.
   */
 
   html {
     font-size: var(--font-size);
+  }
+
+  h1, h2, h3, h4 {
+    font-family: var(--font-display-family);
+    letter-spacing: 0.01em;
   }
 
   h1 {

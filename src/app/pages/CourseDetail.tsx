@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs'
 import { ArrowLeft, BookOpen, Clock, CheckCircle, Award, PlayCircle } from 'lucide-react';
 import { courses } from '../data/courses';
 import { POINTS_CONFIG } from '../data/gamification';
-import { toast } from 'sonner';
+import { showXPToast } from '../components/game/xpToast';
 
 export function CourseDetail() {
   const { courseId } = useParams<{ courseId: string }>();
@@ -43,10 +43,7 @@ export function CourseDetail() {
     );
     if (!wasCompleted && courseId) {
       awardModulePoints(moduleId, courseId);
-      toast.success(`+${POINTS_CONFIG.MODULE_COMPLETE} puntos`, {
-        description: 'Módulo completado',
-        duration: 2000,
-      });
+      showXPToast(POINTS_CONFIG.MODULE_COMPLETE, 'Módulo completado');
     }
   };
 

@@ -9,8 +9,10 @@ import { Progress } from '../components/ui/progress';
 import { toast } from 'sonner';
 import { courses } from '../data/courses';
 import { getPointsForExamScore } from '../data/gamification';
-import { ArrowLeft, ArrowRight, CheckCircle, XCircle, Award } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CheckCircle, XCircle, Trophy } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { showXPToast } from '../components/game/xpToast';
+import { CONFETTI_HEX } from '../components/game/gameStyles';
 
 function getAttemptKey(userId: string, courseId: string) {
   return `exam_attempts_${userId}_${courseId}`;
@@ -146,10 +148,10 @@ export function Exam() {
       const isFirstAttempt = newCount === 1;
       updateUserProgress(course.id, finalScore, course.title, courses.length, isFirstAttempt);
       const pts = getPointsForExamScore(finalScore);
-      toast.success(`¡Aprobado! +${pts} puntos`, { duration: 3500 });
+      showXPToast(pts, '¡Examen aprobado!');
 
-      // Trigger confetti
-      confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+      // Trigger confetti in gold/celebration colors
+      confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 }, colors: CONFETTI_HEX.gold });
     } else {
       const remaining = maxAttempts - newCount;
       if (remaining > 0) {
@@ -167,72 +169,95 @@ export function Exam() {
     const passed = score >= course.exam.passingScore;
     const correctAnswers = Math.round((score / 100) * questions.length);
 
+    const earnedPts = passed ? getPointsForExamScore(score) : 0;
+
     return (
       <div className="container mx-auto px-4 py-8 max-w-3xl">
-        <Card>
-          <CardHeader className="text-center">
-            <div className="flex justify-center mb-4">
-              {passed ? (
-                <Award className="size-20 text-yellow-500" />
-              ) : (
+        {passed ? (
+          <div data-game-panel data-game-grid className="rounded-2xl overflow-hidden">
+            <div className="text-center pt-10 pb-6 px-6">
+              <div className="flex justify-center mb-4">
+                <div className="rounded-full bg-game-surface-2 p-5 glow-gold animate-pop-in">
+                  <Trophy className="size-14 text-neon-gold" strokeWidth={2} />
+                </div>
+              </div>
+              <h2 className="font-display text-3xl font-bold uppercase tracking-wide text-neon-gold text-glow-gold mb-2">
+                ¡Victoria!
+              </h2>
+              <p className="text-game-ink-muted">Aprobaste "{course.title}" y sumaste experiencia</p>
+            </div>
+            <div className="px-6 pb-8">
+              <div className="flex items-center justify-center gap-8 mb-6">
+                <div className="text-center">
+                  <div className="font-display text-5xl font-bold text-game-ink">{score}%</div>
+                  <p className="text-xs text-game-ink-muted mt-1">{correctAnswers} de {questions.length} correctas</p>
+                </div>
+                <div className="h-14 w-px bg-game-border" />
+                <div className="text-center">
+                  <div className="font-display text-5xl font-bold text-neon-amber text-glow-amber">+{earnedPts}</div>
+                  <p className="text-xs text-game-ink-muted mt-1">puntos ganados</p>
+                </div>
+              </div>
+
+              <div className="flex justify-between text-xs text-game-ink-muted mb-5">
+                <span>Intentos utilizados: {attemptsUsed} de {maxAttempts}</span>
+                <span>Mínimo requerido: {course.exam.passingScore}%</span>
+              </div>
+
+              <div className="flex gap-4">
+                <Button className="flex-1" onClick={() => navigate('/profile')}>
+                  Ver Certificado
+                </Button>
+                <Button
+                  variant="outline"
+                  className="flex-1 bg-transparent border-game-border text-game-ink hover:bg-game-surface-2 hover:text-game-ink"
+                  onClick={() => navigate('/courses')}
+                >
+                  Explorar Cursos
+                </Button>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <Card>
+            <CardHeader className="text-center">
+              <div className="flex justify-center mb-4">
                 <XCircle className="size-20 text-red-500" />
-              )}
-            </div>
-            <CardTitle className="text-2xl">
-              {passed ? '¡Felicitaciones!' : 'Resultado del Examen'}
-            </CardTitle>
-            <CardDescription>
-              {passed
-                ? 'Has aprobado el curso exitosamente'
-                : 'No has alcanzado la puntuación mínima'}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="text-center">
-              <div className="text-6xl font-bold mb-2">{score}%</div>
-              <p className="text-gray-600">
-                {correctAnswers} de {questions.length} respuestas correctas
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span>Puntuación mínima requerida:</span>
-                <span className="font-semibold">{course.exam.passingScore}%</span>
               </div>
-              <Progress
-                value={score}
-                className={score >= course.exam.passingScore ? '' : '[&>div]:bg-red-500'}
-              />
-              <div className="flex justify-between text-sm text-gray-500">
-                <span>Intentos utilizados:</span>
-                <span className="font-semibold">{attemptsUsed} de {maxAttempts}</span>
+              <CardTitle className="text-2xl">Resultado del Examen</CardTitle>
+              <CardDescription>No has alcanzado la puntuación mínima</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="text-center">
+                <div className="text-6xl font-bold mb-2">{score}%</div>
+                <p className="text-gray-600">
+                  {correctAnswers} de {questions.length} respuestas correctas
+                </p>
               </div>
-            </div>
 
-            <div className="flex gap-4">
-              {passed ? (
-                <>
-                  <Button className="flex-1" onClick={() => navigate('/profile')}>
-                    Ver Certificado
-                  </Button>
-                  <Button variant="outline" className="flex-1" onClick={() => navigate('/courses')}>
-                    Explorar Cursos
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <Button className="flex-1" onClick={() => window.location.reload()}>
-                    Intentar de Nuevo
-                  </Button>
-                  <Button variant="outline" className="flex-1" onClick={() => navigate(`/courses/${courseId}`)}>
-                    Revisar Contenido
-                  </Button>
-                </>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span>Puntuación mínima requerida:</span>
+                  <span className="font-semibold">{course.exam.passingScore}%</span>
+                </div>
+                <Progress value={score} className="[&>div]:bg-red-500" />
+                <div className="flex justify-between text-sm text-gray-500">
+                  <span>Intentos utilizados:</span>
+                  <span className="font-semibold">{attemptsUsed} de {maxAttempts}</span>
+                </div>
+              </div>
+
+              <div className="flex gap-4">
+                <Button className="flex-1" onClick={() => window.location.reload()}>
+                  Intentar de Nuevo
+                </Button>
+                <Button variant="outline" className="flex-1" onClick={() => navigate(`/courses/${courseId}`)}>
+                  Revisar Contenido
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     );
   }

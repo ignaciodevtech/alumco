@@ -7,6 +7,11 @@ import { Badge } from '../components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { User, Mail, Award, BookOpen, Calendar, ExternalLink, Trophy } from 'lucide-react';
 import { courses } from '../data/courses';
+import { getLevelForPoints, getNextLevel, getLevelProgress } from '../data/gamification';
+import { RankBadge } from '../components/game/RankBadge';
+import { XPBar } from '../components/game/XPBar';
+import { StreakFlame } from '../components/game/StreakFlame';
+import { NEON_STYLES } from '../components/game/gameStyles';
 
 export function Profile() {
   const { user, isAuthenticated } = useAuth();
@@ -29,30 +34,59 @@ export function Profile() {
     ? Math.round(totalScore / user.certificates.length) 
     : 0;
 
+  const isStudent = user.role === 'user';
+  const level = getLevelForPoints(user.points);
+  const nextLevel = getNextLevel(user.points);
+  const levelProgress = getLevelProgress(user.points);
+  const levelStyles = NEON_STYLES[level.neon];
+
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Profile Header */}
       <div className="mb-8">
-        <Card>
+        <Card className="overflow-hidden">
           <CardContent className="pt-6">
-            <div className="flex items-start gap-6">
-              <div className="size-20 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-3xl font-bold">
+            <div className="flex items-start gap-6 flex-wrap">
+              <div className="size-20 rounded-full bg-gradient-to-br from-primary to-neon-violet flex items-center justify-center text-white text-3xl font-bold shrink-0">
                 {user.name.charAt(0).toUpperCase()}
               </div>
-              <div className="flex-1">
+              <div className="flex-1 min-w-[200px]">
                 <h1 className="text-3xl font-bold mb-2">{user.name}</h1>
-                <div className="flex items-center gap-4 text-gray-600">
+                <div className="flex items-center gap-4 text-gray-600 flex-wrap">
                   <div className="flex items-center gap-2">
                     <Mail className="size-4" />
                     {user.email}
                   </div>
                   <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
-                    {user.role === 'admin' ? 'Administrador' : 'Estudiante'}
+                    {user.role === 'admin' ? 'Administrador' : user.role === 'teacher' ? 'Profesor' : 'Estudiante'}
                   </Badge>
                 </div>
               </div>
+              {isStudent && <RankBadge level={level} size="lg" showLabel />}
             </div>
           </CardContent>
+
+          {isStudent && (
+            <div data-game-panel data-game-grid className="px-6 py-5 border-t border-game-border">
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                <span className="text-sm font-display font-semibold text-game-ink">
+                  {user.points} puntos
+                </span>
+                {nextLevel ? (
+                  <span className="text-xs text-game-ink-muted">
+                    {levelProgress}% hacia <span className={levelStyles.text}>{nextLevel.name}</span> · faltan {nextLevel.minPoints - user.points} pts
+                  </span>
+                ) : (
+                  <span className={`text-xs font-semibold ${levelStyles.text}`}>¡Rango máximo alcanzado!</span>
+                )}
+              </div>
+              <XPBar value={levelProgress} neon={level.neon} height="sm" />
+              <div className="mt-3">
+                <StreakFlame streak={user.streak} size="sm" />
+                <span className="text-xs text-game-ink-muted ml-1.5">días de racha activa</span>
+              </div>
+            </div>
+          )}
         </Card>
       </div>
 
@@ -61,7 +95,7 @@ export function Profile() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm">Cursos Completados</CardTitle>
-            <BookOpen className="size-4 text-blue-600" />
+            <BookOpen className="size-4 text-primary" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{user.completedCourses.length}</div>

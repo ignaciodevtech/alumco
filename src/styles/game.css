@@ -1,0 +1,182 @@
+/* ────────────────────────────────────────────────────────────────
+   Game layer utilities
+   Purpose-built classes for the gamification widgets (level HUD, XP
+   bar, badges, ranking, landing hero). Kept separate from theme.css so
+   the "serious base" design system stays easy to read on its own.
+
+   Every animation here has a reduced-motion fallback at the bottom of
+   this file — never remove content or state on reduced motion, only
+   the movement/glow pulsing.
+   ──────────────────────────────────────────────────────────────── */
+
+/* Dark "arcade console" panel — the base surface for any gamification
+   widget embedded in the otherwise-light product UI. */
+[data-game-panel] {
+  position: relative;
+  background:
+    radial-gradient(120% 140% at 15% 0%, color-mix(in oklch, var(--neon-violet) 16%, transparent) 0%, transparent 55%),
+    radial-gradient(100% 120% at 100% 100%, color-mix(in oklch, var(--neon-cyan) 12%, transparent) 0%, transparent 60%),
+    var(--game-bg);
+  color: var(--game-ink);
+  border: 1px solid var(--game-border);
+  isolation: isolate;
+  overflow: hidden;
+}
+
+/* Faint scanline / grid texture — evokes an arcade cabinet screen
+   without being noisy or hurting text contrast (kept at low opacity). */
+[data-game-grid]::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    linear-gradient(color-mix(in oklch, var(--game-ink) 6%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in oklch, var(--game-ink) 6%, transparent) 1px, transparent 1px);
+  background-size: 32px 32px;
+  mask-image: radial-gradient(120% 100% at 50% 0%, black 0%, transparent 75%);
+}
+
+[data-game-panel] > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Glow helpers — soft colored shadow used behind rank icons, XP bars,
+   CTA buttons on dark panels. Keep to one glow per element. */
+.glow-lime { box-shadow: 0 0 0 1px color-mix(in oklch, var(--neon-lime) 55%, transparent), 0 0 24px -4px color-mix(in oklch, var(--neon-lime) 70%, transparent); }
+.glow-cyan { box-shadow: 0 0 0 1px color-mix(in oklch, var(--neon-cyan) 55%, transparent), 0 0 24px -4px color-mix(in oklch, var(--neon-cyan) 70%, transparent); }
+.glow-violet { box-shadow: 0 0 0 1px color-mix(in oklch, var(--neon-violet) 55%, transparent), 0 0 24px -4px color-mix(in oklch, var(--neon-violet) 70%, transparent); }
+.glow-magenta { box-shadow: 0 0 0 1px color-mix(in oklch, var(--neon-magenta) 55%, transparent), 0 0 24px -4px color-mix(in oklch, var(--neon-magenta) 70%, transparent); }
+.glow-gold { box-shadow: 0 0 0 1px color-mix(in oklch, var(--neon-gold) 55%, transparent), 0 0 24px -4px color-mix(in oklch, var(--neon-gold) 70%, transparent); }
+.glow-amber { box-shadow: 0 0 0 1px color-mix(in oklch, var(--neon-amber) 55%, transparent), 0 0 24px -4px color-mix(in oklch, var(--neon-amber) 70%, transparent); }
+
+.text-glow-lime { text-shadow: 0 0 18px color-mix(in oklch, var(--neon-lime) 65%, transparent); }
+.text-glow-cyan { text-shadow: 0 0 18px color-mix(in oklch, var(--neon-cyan) 65%, transparent); }
+.text-glow-violet { text-shadow: 0 0 18px color-mix(in oklch, var(--neon-violet) 65%, transparent); }
+.text-glow-magenta { text-shadow: 0 0 18px color-mix(in oklch, var(--neon-magenta) 65%, transparent); }
+.text-glow-gold { text-shadow: 0 0 18px color-mix(in oklch, var(--neon-gold) 65%, transparent); }
+.text-glow-amber { text-shadow: 0 0 18px color-mix(in oklch, var(--neon-amber) 65%, transparent); }
+
+/* Prismatic ring for the top-tier ("Mítico") rank — a rotating conic
+   gradient border, not gradient text. Rare, reserved for the max rank. */
+.ring-prismatic {
+  position: relative;
+}
+.ring-prismatic::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  padding: 2px;
+  background: conic-gradient(from var(--prism-angle, 0deg), var(--neon-gold), var(--neon-magenta), var(--neon-violet), var(--neon-cyan), var(--neon-gold));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  animation: prism-spin 4s linear infinite;
+}
+
+@property --prism-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes prism-spin {
+  to { --prism-angle: 360deg; }
+}
+
+/* XP bar / badge shimmer sweep. Relies on the element already being a
+   positioning context (via an explicit `relative` or `absolute` Tailwind
+   class at the call site) so it doesn't fight utility classes for
+   `position`. */
+.shimmer-sweep {
+  overflow: hidden;
+}
+.shimmer-sweep::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(115deg, transparent 20%, color-mix(in oklch, white 55%, transparent) 50%, transparent 80%);
+  transform: translateX(-100%);
+  animation: shimmer-sweep 2.6s ease-in-out infinite;
+}
+
+@keyframes shimmer-sweep {
+  0% { transform: translateX(-120%); }
+  60%, 100% { transform: translateX(120%); }
+}
+
+/* Streak flame */
+.animate-flame-flicker {
+  animation: flame-flicker 1.6s ease-in-out infinite;
+  transform-origin: 50% 90%;
+}
+@keyframes flame-flicker {
+  0%, 100% { transform: scale(1) rotate(-1deg); filter: brightness(1); }
+  25% { transform: scale(1.06) rotate(1deg); filter: brightness(1.15); }
+  50% { transform: scale(0.97) rotate(-2deg); filter: brightness(0.95); }
+  75% { transform: scale(1.04) rotate(2deg); filter: brightness(1.1); }
+}
+
+/* Soft ambient pulse for glow rings / active state indicators */
+.animate-pulse-glow {
+  animation: pulse-glow 2.4s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+}
+@keyframes pulse-glow {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.035); }
+}
+
+/* Rank-up / badge unlock pop */
+@keyframes pop-in {
+  0% { opacity: 0; transform: scale(0.6) translateY(12px); }
+  60% { opacity: 1; transform: scale(1.05) translateY(-2px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+.animate-pop-in {
+  animation: pop-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Floating "+N" points feedback */
+@keyframes float-up-fade {
+  0% { opacity: 0; transform: translateY(6px) scale(0.9); }
+  15% { opacity: 1; transform: translateY(0) scale(1); }
+  80% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-28px) scale(1); }
+}
+.animate-float-up-fade {
+  animation: float-up-fade 1.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Starfield twinkle used behind the landing hero */
+@keyframes twinkle {
+  0%, 100% { opacity: 0.25; }
+  50% { opacity: 0.9; }
+}
+.animate-twinkle {
+  animation: twinkle 3s ease-in-out infinite;
+}
+
+/* ── Reduced motion: keep every state visible, drop the movement ── */
+@media (prefers-reduced-motion: reduce) {
+  .shimmer-sweep::after,
+  .animate-flame-flicker,
+  .animate-pulse-glow,
+  .animate-pop-in,
+  .animate-float-up-fade,
+  .animate-twinkle,
+  .ring-prismatic::before {
+    animation: none !important;
+  }
+  .animate-pop-in {
+    opacity: 1;
+    transform: none;
+  }
+  .animate-float-up-fade {
+    opacity: 1;
+    transform: translateY(-10px);
+  }
+}

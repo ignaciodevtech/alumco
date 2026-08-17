@@ -1,0 +1,6 @@
+/* Display/HUD font (Rajdhani) for headings, rank names, XP/level readouts and
+   hero moments — condensed, technical, "game console" feel.
+   Body copy stays on Inter (humanist grotesque) for maximum legibility;
+   the two are picked to sit on a clear contrast axis (condensed/technical
+   vs. neutral/readable) rather than two similar geometric sans. */
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap');
