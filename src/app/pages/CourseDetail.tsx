@@ -15,8 +15,10 @@ export function CourseDetail() {
   const { courseId } = useParams<{ courseId: string }>();
   const { user, isAuthenticated, awardModulePoints, recordDailyActivity } = useAuth();
   const navigate = useNavigate();
-  const [completedModules, setCompletedModules] = useState<string[]>([]);
-
+  const [completedModules, setCompletedModules] = useState<string[]>(() => {
+    const saved = localStorage.getItem(`progress_${courseId}`);
+    return saved ? JSON.parse(saved) : [];
+});
   const course = courses.find((c) => c.id === courseId);
 
   useEffect(() => {
@@ -37,15 +39,19 @@ export function CourseDetail() {
   const progressPercentage = (completedModules.length / course.modules.length) * 100;
 
   const toggleModuleComplete = (moduleId: string) => {
-    const wasCompleted = completedModules.includes(moduleId);
-    setCompletedModules(prev =>
-      wasCompleted ? prev.filter(id => id !== moduleId) : [...prev, moduleId]
-    );
-    if (!wasCompleted && courseId) {
-      awardModulePoints(moduleId, courseId);
-      showXPToast(POINTS_CONFIG.MODULE_COMPLETE, 'Módulo completado');
-    }
-  };
+  const wasCompleted = completedModules.includes(moduleId);
+  const updated = wasCompleted
+    ? completedModules.filter(id => id !== moduleId)
+    : [...completedModules, moduleId];
+  
+  setCompletedModules(updated);
+  localStorage.setItem(`progress_${courseId}`, JSON.stringify(updated));
+  
+  if (!wasCompleted && courseId) {
+    awardModulePoints(moduleId, courseId);
+    showXPToast(POINTS_CONFIG.MODULE_COMPLETE, 'Módulo completado');
+  }
+};
 
   const canTakeExam = completedModules.length === course.modules.length || isCompleted;
 

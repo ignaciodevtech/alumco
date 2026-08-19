@@ -28,9 +28,13 @@ export function Courses() {
     return matchesSearch && matchesLevel;
   });
 
-  const isCompleted = (courseId: string) => {
-    return user?.completedCourses.includes(courseId) || false;
-  };
+  const isInProgress = (courseId: string) => {
+  const saved = localStorage.getItem(`progress_${courseId}`);
+  if (!saved) return false;
+  const completed = JSON.parse(saved) as string[];
+  const course = courses.find(c => c.id === courseId);
+  return completed.length > 0 && !user?.completedCourses.includes(courseId);
+};
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -118,7 +122,8 @@ export function Courses() {
 
               <Button asChild className="w-full">
                 <Link to={`/courses/${course.id}`}>
-                  {isCompleted(course.id) ? 'Revisar Curso' : 'Comenzar Curso'}
+                  {isCompleted(course.id) ? 'Revisar Curso' : 
+                  isInProgress(course.id) ? 'Continuar Curso' : 'Comenzar Curso'}
                 </Link>
               </Button>
             </CardContent>
