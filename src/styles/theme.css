@@ -183,6 +183,7 @@ html.high-contrast .animate-flame-flicker {
   --z-modal: 51;
   --z-toast: 60;
   --z-tooltip: 70;
+  --z-sticky: 100;
 }
 
 .dark {
