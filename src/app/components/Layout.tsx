@@ -28,6 +28,8 @@ export function Layout() {
   const { user, isAuthenticated, logout } = useAuth();
   const { highContrast, fontSize, toggleHighContrast, setFontSize } = useAccessibility();
   const navigate = useNavigate();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   // ── Global level-up detection ─────────────────────────────────
   // Watches the authenticated user's points regardless of which page
@@ -153,43 +155,47 @@ export function Layout() {
               </Link>
             )}
             {isAuthenticated ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="flex items-center gap-2">
-                    <User className="size-4" />
-                    {user?.name}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => navigate('/profile')}>
-                    <User className="size-4 mr-2" />
-                    Mi Perfil
-                  </DropdownMenuItem>
-                  {user?.role === 'user' && (
-                    <DropdownMenuItem onClick={() => navigate('/ranking')}>
-                      <Trophy className="size-4 mr-2" />
-                      Ranking
-                    </DropdownMenuItem>
-                  )}
-                  {user?.role === 'admin' && (
-                    <DropdownMenuItem onClick={() => navigate('/admin')}>
-                      <LayoutDashboard className="size-4 mr-2" />
-                      Panel Admin
-                    </DropdownMenuItem>
-                  )}
-                  {user?.role === 'teacher' && (
-                    <DropdownMenuItem onClick={() => navigate('/teacher')}>
-                      <LayoutDashboard className="size-4 mr-2" />
-                      Panel Profesor
-                    </DropdownMenuItem>
-                  )}
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout}>
-                    <LogOut className="size-4 mr-2" />
-                    Cerrar Sesión
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <div className="relative" ref={menuRef}>
+                <Button
+                  variant="outline"
+                  className="flex items-center gap-2"
+                  onClick={() => setMenuOpen(o => !o)}
+                >
+                  <User className="size-4" />
+                  {user?.name}
+                </Button>
+                {menuOpen && (
+                  <div className="absolute right-0 top-full mt-1 w-48 rounded-md border bg-white shadow-lg z-[200]">
+                    <button onClick={() => { navigate('/profile'); setMenuOpen(false); }}
+                      className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-gray-100">
+                      <User className="size-4" /> Mi Perfil
+                    </button>
+                    {user?.role === 'user' && (
+                      <button onClick={() => { navigate('/ranking'); setMenuOpen(false); }}
+                        className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-gray-100">
+                        <Trophy className="size-4" /> Ranking
+                      </button>
+                    )}
+                    {user?.role === 'admin' && (
+                      <button onClick={() => { navigate('/admin'); setMenuOpen(false); }}
+                        className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-gray-100">
+                        <LayoutDashboard className="size-4" /> Panel Admin
+                      </button>
+                    )}
+                    {user?.role === 'teacher' && (
+                      <button onClick={() => { navigate('/teacher'); setMenuOpen(false); }}
+                        className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-gray-100">
+                        <LayoutDashboard className="size-4" /> Panel Profesor
+                      </button>
+                    )}
+                    <hr className="my-1" />
+                    <button onClick={() => { handleLogout(); setMenuOpen(false); }}
+                      className="flex w-full items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50">
+                      <LogOut className="size-4" /> Cerrar Sesión
+                    </button>
+                  </div>
+                )}
+              </div>
             ) : (
               <>
                 <Button variant="ghost" onClick={() => navigate('/login')}>
