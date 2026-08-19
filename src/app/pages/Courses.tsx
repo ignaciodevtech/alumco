@@ -28,11 +28,14 @@ export function Courses() {
     return matchesSearch && matchesLevel;
   });
 
-  const isInProgress = (courseId: string) => {
+  const isCompleted = (courseId: string) => {
+  return user?.completedCourses.includes(courseId) || false;
+};
+
+const isInProgress = (courseId: string) => {
   const saved = localStorage.getItem(`progress_${courseId}`);
   if (!saved) return false;
   const completed = JSON.parse(saved) as string[];
-  const course = courses.find(c => c.id === courseId);
   return completed.length > 0 && !user?.completedCourses.includes(courseId);
 };
 
