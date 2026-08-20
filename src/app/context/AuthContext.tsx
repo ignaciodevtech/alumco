@@ -32,6 +32,11 @@ interface Certificate {
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
+  /** True until the initial localStorage session lookup finishes. Routes
+   * must not redirect-to-login while this is true, or a page reload would
+   * always bounce the user out before their session had a chance to load
+   * (see AuthProvider's init effect for why). */
+  isLoading: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   register: (email: string, password: string, name: string, sede?: Sede) => Promise<boolean>;
   logout: () => void;
@@ -121,18 +126,27 @@ function migrateLegacyStorage() {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  // Starts true and flips to false once the localStorage lookup below runs.
+  // React fires effects bottom-up (children before parents), so on a page
+  // reload a protected page's own "redirect if not authenticated" effect
+  // would otherwise run *before* this one restores the session — kicking
+  // a perfectly logged-in user back to /login every time. Consumers (see
+  // Layout.tsx) hold off rendering routes until isLoading is false, which
+  // means this effect always resolves before any page-level effect can fire.
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     migrateLegacyStorage();
     const sessionId = localStorage.getItem(SESSION_KEY);
-    if (!sessionId) return;
-
-    const profile = loadProfile(sessionId);
-    if (profile) {
-      setUser(profile);
-    } else {
-      localStorage.removeItem(SESSION_KEY);
+    if (sessionId) {
+      const profile = loadProfile(sessionId);
+      if (profile) {
+        setUser(profile);
+      } else {
+        localStorage.removeItem(SESSION_KEY);
+      }
     }
+    setIsLoading(false);
   }, []);
 
   function save(u: User) {
@@ -287,6 +301,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         user,
         isAuthenticated: !!user,
+        isLoading,
         login,
         register,
         logout,

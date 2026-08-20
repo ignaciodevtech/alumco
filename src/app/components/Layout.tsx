@@ -25,7 +25,7 @@ const FONT_SIZES: { value: FontSize; label: string }[] = [
 ];
 
 export function Layout() {
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated, isLoading, logout } = useAuth();
   const { highContrast, fontSize, toggleHighContrast, setFontSize } = useAccessibility();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -211,7 +211,19 @@ export function Layout() {
       </header>
 
       <main className="flex-1">
-        <Outlet />
+        {isLoading ? (
+          // Session lookup (localStorage) hasn't resolved yet. Holding the
+          // route here — instead of rendering it right away — is what stops
+          // protected pages from mounting (and firing their own "redirect
+          // if logged out" effect) before AuthProvider knows whether there's
+          // a session. Without this, every reload of a protected page would
+          // briefly report isAuthenticated=false and bounce to /login.
+          <div className="flex items-center justify-center py-24" role="status" aria-label="Cargando…">
+            <div className="size-8 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
+          </div>
+        ) : (
+          <Outlet />
+        )}
       </main>
 
       <LevelUpCelebration level={levelUp} onClose={() => setLevelUp(null)} />
