@@ -58,7 +58,7 @@ export function Layout() {
   return (
     <div className="min-h-screen flex flex-col">
       {/* ── Accessibility Bar ─────────────────────────────────── */}
-      <div className="bg-gray-900 text-white text-sm py-1.5 px-4">
+      <div data-a11y-bar className="bg-gray-900 text-white text-sm py-1.5 px-4">
         <div className="container mx-auto flex items-center justify-between gap-4">
           <span className="text-gray-400 text-xs hidden sm:inline">
             Herramientas de accesibilidad

@@ -5,65 +5,110 @@ html.fs-large  { --font-size: 19px; }
 html.fs-xlarge { --font-size: 22px; }
 
 /* ── Accessibility: high contrast ────────────────────────────
-   Overrides design tokens so every Tailwind utility that
-   consumes a CSS variable inherits the high-contrast palette. */
+   A maximum-contrast, LIGHT-based palette (black text on white,
+   solid dark borders) rather than an inverted dark theme.
+
+   Why light and not dark: the rest of the app pairs plenty of raw
+   Tailwind utilities (text-gray-600, text-amber-600, bg-green-500...)
+   with a light/white card background by design (see AGENTS.md). A
+   previous version of this file flipped --card/--popover/--secondary/
+   --muted/--accent to near-black while leaving --foreground the same
+   light color as --background — which made most plain text invisible,
+   and made every one of those raw utility colors (tuned for a light
+   card) unreadable against the new dark one. Keeping surfaces light
+   here means hundreds of existing color choices keep working, and only
+   the handful of medium/low-contrast shades below need remapping. */
 html.high-contrast {
-  --background: #f0f4f8;
-  --foreground: #f0f4f8;
-  --card: #0d0d0d;
-  --card-foreground: #ffffff;
-  --popover: #111111;
-  --popover-foreground: #ffffff;
-  --primary: #ffff00;
-  --primary-foreground: #000000;
-  --secondary: #1a1a1a;
-  --secondary-foreground: #ffffff;
-  --muted: #1a1a1a;
-  --muted-foreground: #cccccc;
-  --accent: #222222;
-  --accent-foreground: #ffffff;
-  --border: rgba(255,255,255,0.4);
-  --input: #1a1a1a;
-  --input-background: #111111;
-  --destructive: #ff4444;
+  --background: #ffffff;
+  --foreground: #000000;
+  --card: #ffffff;
+  --card-foreground: #000000;
+  --popover: #ffffff;
+  --popover-foreground: #000000;
+  /* Needs to read clearly both as text (`text-primary`, used all over
+     for links/highlights) and as white-on-color button fill
+     (`bg-primary` + `text-primary-foreground`) — bright yellow only
+     ever worked for the second case. */
+  --primary: #003a8c;
+  --primary-foreground: #ffffff;
+  --secondary: #e2e2e2;
+  --secondary-foreground: #000000;
+  --muted: #e5e5e5;
+  --muted-foreground: #333333;
+  --accent: #e2e2e2;
+  --accent-foreground: #000000;
+  --border: #000000;
+  --input: #000000;
+  --input-background: #ffffff;
+  --destructive: #b30000;
   --destructive-foreground: #ffffff;
-  --ring: #ffff00;
+  --ring: #b34700;
 }
 
-/* Ensure inline text colours also adapt in high contrast */
-html.high-contrast .text-gray-600,
-html.high-contrast .text-gray-500,
-html.high-contrast .text-gray-400 {
-  color: #cccccc !important;
-}
-html.high-contrast .text-blue-600,
-html.high-contrast .text-blue-500 {
-  color: #66b3ff !important;
-}
-html.high-contrast .text-green-600,
-html.high-contrast .text-green-500 {
-  color: #66ff99 !important;
-}
-html.high-contrast .text-yellow-500,
-html.high-contrast .text-yellow-600 {
-  color: #ffdd44 !important;
-}
-html.high-contrast .bg-white,
-html.high-contrast .bg-gray-50 {
-  background-color: #111111 !important;
-}
+/* Borders need to be solid and dark now that surfaces are light — the
+   old semi-transparent white border only worked against a dark card. */
 html.high-contrast .border {
-  border-color: rgba(255,255,255,0.35) !important;
-}
-html.high-contrast .bg-blue-600 {
-  background-color: #0055cc !important;
+  border-color: var(--border) !important;
 }
 html.high-contrast button,
 html.high-contrast [role="button"] {
   outline: 2px solid transparent;
 }
-html.high-contrast button:focus-visible {
-  outline: 3px solid #ffff00 !important;
+html.high-contrast button:focus-visible,
+html.high-contrast a:focus-visible,
+html.high-contrast [role="button"]:focus-visible {
+  outline: 3px solid var(--ring) !important;
+  outline-offset: 2px;
+}
+
+/* ── Hardcoded Tailwind text colors ──────────────────────────
+   The app pairs raw `text-{color}-{shade}` utilities with the (light)
+   card background by design (AGENTS.md). The lighter/mid shades below
+   don't have enough contrast on their own to count as "high contrast",
+   so darken them to a same-hue, safe equivalent — darker shades
+   (700+) already read fine on a light card and are left alone, and
+   different hues stay distinguishable from each other (status colors,
+   badges, etc. still need to look different). */
+html.high-contrast :is(.text-gray-400, .text-gray-500, .text-gray-600, .text-slate-400) {
+  color: #262626 !important;
+}
+html.high-contrast :is(.text-blue-400, .text-blue-500, .text-blue-600) {
+  color: #00337a !important;
+}
+html.high-contrast :is(.text-green-400, .text-green-500, .text-green-600) {
+  color: #0a6b2b !important;
+}
+html.high-contrast :is(.text-red-400, .text-red-500, .text-red-600) {
+  color: #a30000 !important;
+}
+html.high-contrast :is(.text-yellow-400, .text-yellow-500, .text-yellow-600, .text-amber-500, .text-amber-600) {
+  color: #6b4c00 !important;
+}
+html.high-contrast :is(.text-orange-400, .text-orange-500, .text-orange-600) {
+  color: #7a3900 !important;
+}
+html.high-contrast :is(.text-purple-500, .text-purple-600, .text-violet-600) {
+  color: #4a0d73 !important;
+}
+html.high-contrast .text-fuchsia-600 {
+  color: #6a0a73 !important;
+}
+
+/* The always-dark accessibility toolbar (top of every page, see
+   data-a11y-bar in Layout.tsx) intentionally pairs light grays with its
+   own near-black background — restore that here, it's the one place
+   these shades are already correct against a dark surface. */
+html.high-contrast [data-a11y-bar] :is(.text-gray-400, .text-gray-600) {
+  color: #9ca3af !important;
+}
+
+/* Solid green fills used for "completado/aprobado" badges, icon chips
+   and buttons pair with white text/icons — Tailwind's green-500/600/700
+   aren't dark enough for that pairing to stay legible. No other part of
+   the app uses these same shades as a multi-step legend/heatmap, so
+   darkening them here doesn't erase any other meaning. */
+html.high-contrast :is(.bg-green-500, .bg-green-600, .bg-green-700) {
+  background-color: #0a6b2b !important;
 }
 
 /* Game/gamification surfaces: fold the neon layer back into the
@@ -73,26 +118,31 @@ html.high-contrast [data-game-panel] {
   background: #0d0d0d !important;
   border-color: rgba(255, 255, 255, 0.4) !important;
   box-shadow: none !important;
+  color: #ffffff !important;
 }
 html.high-contrast [data-game-panel] * {
   text-shadow: none !important;
 }
-html.high-contrast .text-neon-lime,
-html.high-contrast .text-neon-cyan,
-html.high-contrast .text-neon-gold,
-html.high-contrast .text-neon-amber {
+html.high-contrast [data-game-panel] :is(.text-neon-lime, .text-neon-cyan, .text-neon-gold, .text-neon-amber) {
   color: #ffff00 !important;
 }
-html.high-contrast .text-neon-violet,
-html.high-contrast .text-neon-magenta {
+html.high-contrast [data-game-panel] :is(.text-neon-violet, .text-neon-magenta) {
   color: #66b3ff !important;
 }
-html.high-contrast .border-neon-lime,
-html.high-contrast .border-neon-cyan,
-html.high-contrast .border-neon-violet,
-html.high-contrast .border-neon-magenta,
-html.high-contrast .border-neon-gold,
-html.high-contrast .border-neon-amber {
+/* The same neon text classes are also used standalone outside a game
+   panel (e.g. the rank name next to the nav/profile rank icon) — there
+   they sit on the light card background, so they need a dark
+   equivalent instead of a bright one to stay legible. */
+html.high-contrast :is(.text-neon-lime, .text-neon-cyan, .text-neon-gold, .text-neon-amber) {
+  color: #6b5700 !important;
+}
+html.high-contrast :is(.text-neon-violet, .text-neon-magenta) {
+  color: #4a0d73 !important;
+}
+html.high-contrast :is(.text-glow-lime, .text-glow-cyan, .text-glow-violet, .text-glow-magenta, .text-glow-gold, .text-glow-amber) {
+  text-shadow: none !important;
+}
+html.high-contrast :is(.border-neon-lime, .border-neon-cyan, .border-neon-violet, .border-neon-magenta, .border-neon-gold, .border-neon-amber) {
   border-color: #ffff00 !important;
 }
 html.high-contrast [data-glow],
