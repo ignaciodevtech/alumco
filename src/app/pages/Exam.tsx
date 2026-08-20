@@ -53,8 +53,11 @@ export function Exam() {
       return;
     }
 
-    // Check if already completed
-    if (user?.completedCourses.includes(course.id)) {
+    // Check if already completed. Skip this once we're showing the results
+    // of the attempt that just completed it — otherwise passing the exam
+    // (which marks the course as completed) immediately redirects the user
+    // away before they can see their score, certificate or earned badges.
+    if (!showResults && user?.completedCourses.includes(course.id)) {
       toast.info('Ya has completado este curso');
       navigate(`/courses/${courseId}`);
       return;
@@ -65,7 +68,7 @@ export function Exam() {
       const count = getAttemptCount(user.id, course.id);
       setAttemptsUsed(count);
     }
-  }, [isAuthenticated, course, courseId, navigate, user]);
+  }, [isAuthenticated, course, courseId, navigate, user, showResults]);
 
   if (!course) return null;
 
