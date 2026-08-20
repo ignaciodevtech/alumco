@@ -11,20 +11,30 @@ import { courses } from '../data/courses';
 import { POINTS_CONFIG } from '../data/gamification';
 import { showXPToast } from '../components/game/xpToast';
 
+function progressKey(userId: string, courseId: string) {
+  return `progress_${userId}_${courseId}`;
+}
+
 export function CourseDetail() {
   const { courseId } = useParams<{ courseId: string }>();
   const { user, isAuthenticated, awardModulePoints, recordDailyActivity } = useAuth();
   const navigate = useNavigate();
-  const [completedModules, setCompletedModules] = useState<string[]>(() => {
-    const saved = localStorage.getItem(`progress_${courseId}`);
-    return saved ? JSON.parse(saved) : [];
-});
+  const [completedModules, setCompletedModules] = useState<string[]>([]);
   const course = courses.find((c) => c.id === courseId);
 
   useEffect(() => {
     if (!isAuthenticated) { navigate('/login'); return; }
     recordDailyActivity();
   }, [isAuthenticated, navigate]);
+
+  // Load this user's module progress once we know who's logged in (scoped
+  // per user id so it's restored correctly after logging back in, and
+  // doesn't bleed between different accounts on the same browser).
+  useEffect(() => {
+    if (!user || !courseId) return;
+    const saved = localStorage.getItem(progressKey(user.id, courseId));
+    setCompletedModules(saved ? JSON.parse(saved) : []);
+  }, [user?.id, courseId]);
 
   if (!course) {
     return (
@@ -39,15 +49,16 @@ export function CourseDetail() {
   const progressPercentage = (completedModules.length / course.modules.length) * 100;
 
   const toggleModuleComplete = (moduleId: string) => {
+  if (!user || !courseId) return;
   const wasCompleted = completedModules.includes(moduleId);
   const updated = wasCompleted
     ? completedModules.filter(id => id !== moduleId)
     : [...completedModules, moduleId];
   
   setCompletedModules(updated);
-  localStorage.setItem(`progress_${courseId}`, JSON.stringify(updated));
+  localStorage.setItem(progressKey(user.id, courseId), JSON.stringify(updated));
   
-  if (!wasCompleted && courseId) {
+  if (!wasCompleted) {
     awardModulePoints(moduleId, courseId);
     showXPToast(POINTS_CONFIG.MODULE_COMPLETE, 'Módulo completado');
   }

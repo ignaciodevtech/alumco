@@ -18,6 +18,7 @@ interface User {
   streak: number;
   lastActivity: string | null;
   weeklyModuleDates: string[];
+  completedModuleIds: string[];
 }
 
 interface Certificate {
@@ -41,6 +42,17 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Every user's profile (progress, points, badges, certificates...) is
+// persisted permanently under its own key, keyed by user id, so it survives
+// logging out. `SESSION_KEY` only tracks *which* profile is currently signed
+// in — logging out must forget that pointer, never the profile data itself.
+const PROFILE_PREFIX = 'alumco_profile_';
+const SESSION_KEY = 'alumco_session_user_id';
+// Old, single-profile storage scheme this app used to use. `logout()` used to
+// wipe this key outright, permanently deleting whoever's progress was in it.
+const LEGACY_USER_KEY = 'user';
+const LEGACY_MODULES_KEY = 'completedModules';
+
 function today(): string {
   return new Date().toISOString().split('T')[0];
 }
@@ -55,32 +67,78 @@ function ensureGamification(u: Partial<User>): User {
     weeklyModuleDates: [],
     completedCourses: [],
     certificates: [],
+    completedModuleIds: [],
     ...u,
   } as User;
 }
 
+function profileKey(id: string) {
+  return `${PROFILE_PREFIX}${id}`;
+}
+
+function loadProfile(id: string): User | null {
+  const raw = localStorage.getItem(profileKey(id));
+  if (!raw) return null;
+  try {
+    return ensureGamification(JSON.parse(raw));
+  } catch {
+    return null;
+  }
+}
+
+function persistProfile(u: User) {
+  localStorage.setItem(profileKey(u.id), JSON.stringify(u));
+}
+
+/** One-time upgrade from the old single-key storage scheme to the per-user
+ * profile scheme above. Safe to call on every mount — it's a no-op once a
+ * session key exists. */
+function migrateLegacyStorage() {
+  if (localStorage.getItem(SESSION_KEY)) return;
+
+  const legacyRaw = localStorage.getItem(LEGACY_USER_KEY);
+  if (!legacyRaw) return;
+
+  try {
+    const legacyUser = JSON.parse(legacyRaw);
+    if (!legacyUser?.id) return;
+
+    const legacyMods = localStorage.getItem(LEGACY_MODULES_KEY);
+    const migrated = ensureGamification({
+      ...legacyUser,
+      completedModuleIds: legacyMods ? JSON.parse(legacyMods) : [],
+    });
+
+    persistProfile(migrated);
+    localStorage.setItem(SESSION_KEY, migrated.id);
+  } catch {
+    // Malformed legacy data — ignore, the user just starts fresh.
+  } finally {
+    localStorage.removeItem(LEGACY_USER_KEY);
+    localStorage.removeItem(LEGACY_MODULES_KEY);
+  }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [completedModuleIds, setCompletedModuleIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    const stored = localStorage.getItem('user');
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      setUser(ensureGamification(parsed));
+    migrateLegacyStorage();
+    const sessionId = localStorage.getItem(SESSION_KEY);
+    if (!sessionId) return;
+
+    const profile = loadProfile(sessionId);
+    if (profile) {
+      setUser(profile);
+    } else {
+      localStorage.removeItem(SESSION_KEY);
     }
-    const mods = localStorage.getItem('completedModules');
-    if (mods) setCompletedModuleIds(new Set(JSON.parse(mods)));
   }, []);
 
   function save(u: User) {
     setUser(u);
-    localStorage.setItem('user', JSON.stringify(u));
-  }
-
-  function saveMods(mods: Set<string>) {
-    setCompletedModuleIds(mods);
-    localStorage.setItem('completedModules', JSON.stringify([...mods]));
+    persistProfile(u);
+    localStorage.setItem(SESSION_KEY, u.id);
   }
 
   const login = async (email: string, password: string): Promise<boolean> => {
@@ -94,17 +152,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       base = { id: `u-${email}`, email, name: email.split('@')[0], role: 'user', sede: 'Providencia' };
     }
 
-    const u = ensureGamification(base);
-    // Restore persisted gamification data if same user
-    const stored = localStorage.getItem('user');
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      if (parsed.id === u.id) {
-        save(ensureGamification(parsed));
-        return true;
-      }
-    }
-    save(u);
+    // Restore this user's persisted profile if they've logged in before on
+    // this browser, otherwise start a fresh one. Either way, save() below
+    // never deletes anything — a later logout won't lose this progress.
+    const existing = loadProfile(base.id!);
+    save(existing ?? ensureGamification(base));
     return true;
   };
 
@@ -121,10 +173,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = () => {
+    // Only forget *which* profile is signed in — the profile itself (points,
+    // badges, certificates, completed courses) stays in localStorage under
+    // its own key so it's there again next time this user logs in.
     setUser(null);
-    localStorage.removeItem('user');
-    localStorage.removeItem('completedModules');
-    setCompletedModuleIds(new Set());
+    localStorage.removeItem(SESSION_KEY);
   };
 
   const recordDailyActivity = () => {
@@ -148,11 +201,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const awardModulePoints = (moduleId: string, courseId: string) => {
     if (!user) return;
     const key = `${courseId}:${moduleId}`;
-    if (completedModuleIds.has(key)) return;
-
-    const newMods = new Set(completedModuleIds);
-    newMods.add(key);
-    saveMods(newMods);
+    if (user.completedModuleIds.includes(key)) return;
 
     const newPoints = user.points + POINTS_CONFIG.MODULE_COMPLETE;
     const newBadges = [...user.badges];
@@ -175,7 +224,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       newBadges.push('weekly_streak');
     }
 
-    save({ ...user, points: newPoints, badges: newBadges, weeklyModuleDates: weekDates });
+    save({
+      ...user,
+      points: newPoints,
+      badges: newBadges,
+      weeklyModuleDates: weekDates,
+      completedModuleIds: [...user.completedModuleIds, key],
+    });
   };
 
   const updateUserProgress = (

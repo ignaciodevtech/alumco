@@ -33,10 +33,11 @@ export function Courses() {
 };
 
 const isInProgress = (courseId: string) => {
-  const saved = localStorage.getItem(`progress_${courseId}`);
+  if (!user) return false;
+  const saved = localStorage.getItem(`progress_${user.id}_${courseId}`);
   if (!saved) return false;
   const completed = JSON.parse(saved) as string[];
-  return completed.length > 0 && !user?.completedCourses.includes(courseId);
+  return completed.length > 0 && !user.completedCourses.includes(courseId);
 };
 
   return (
